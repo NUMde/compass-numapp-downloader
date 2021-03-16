@@ -1,0 +1,5 @@
+M2Crypto==0.37.1
+pandas==0.25.1
+python-jose==3.2.0
+requests==2.22.0
+typing-extensions==3.7.4.3

@@ -1,0 +1,85 @@
+{
+    "info": {
+        "name": "compass-numapp-backend-download-api",
+        "description": "# COMPASS NUM-App Backend Download API Collection\n\n## About  \n\nThis collection contains sample requests  that you can use to download questionnaire response objects from via the mobile backend.\n\nThe /download api of the mobile backend requires authentication, therefore, you must first request an authentication token via the /auth route.\n\n## Prerequisites\n\nApply these changes in the tabs on collection level, not for individual requests.\n\nDefine the variable base_url in the corresponding tab and set it to the URL for your mobile backend.\n\nThe /download api of the mobile backend requires authentication, therefore, you must first request an authentication token via the /auth route. Refer to the README of the downloader script about how to generate the token.\n\n## Requests\n\n### Download documents by page (GET)\n\nThis request allows you to download encrypted documents from the queue. The only parameter that you must set is the page number.\n\n### Delete document (DELETE)\n\nThis request allows you to delete documents from the queue. You must specify the uuids of the elements which you wish to delete in as a list of strings.\n\n",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [{
+            "name": "Download documents by page",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/download?page=",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "download"
+                    ],
+                    "query": [{
+                        "key": "page",
+                        "value": "",
+                        "description": "Page for which data should be retreived (Type: int)"
+                    }]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Delete document",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/download?json=",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "download"
+                    ],
+                    "query": [{
+                        "key": "json",
+                        "value": "",
+                        "description": "List of IDs that identify database entries that should be deleted (Type: List[str])"
+                    }]
+                }
+            },
+            "response": []
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [{
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }]
+    },
+    "event": [{
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [{
+        "key": "base_url",
+        "value": ""
+    }]
+}

@@ -1,0 +1,89 @@
+:important-caption: :heavy_exclamation_mark:
+
+link:../README.adoc[← Table of Contents]
+
+== Setup and Usage
+
+This documentatioon will provide you with information on how to setup the downloader script and how to use it.
+
+=== Setup
+
+==== Keys
+
+Given the en-/decryption functions implemented by the downloader script, you need to store the required key files in the *keys* folder. The following files are required: 
+
+* private.pem: Your private key which matches the public key that was used for encryption in the mobile app.
+* cert.pem: Your certificate which matches the one that was used for encryption in the mobile app.
+* public_sender.pem: The senders public key matching the private key that was used for signing in the mobile backend.
+
+==== Configuration
+
+Several configuration parameters must be set for the download script to run successfully. An example config file is given by _config.sample_. Rename this file to _config.py_ and add your corresponding values.
+
+These are the configuration parameters which you must adapt:
+
+* BASE_URL_DEV:     Api route for your development instance of the mobile backend
+* BASE_URL:         Api route for your production instance of the mobile backend
+* CLIENT_ID:        Identification of client for retrieval of authentication token
+* CLIENT_SECRET:    Secret of client for retrieval of authentication token
+
+Change the following parameters if you modified the backend routes or wish to define custom file paths:
+
+* AUTH_TYPE:        Authentication type for requests to mobile backend
+* DL_ROUTE:         Questionnaire response download route name
+* AUTH_ROUTE:       Authentication route name
+* INT_RESULT_PATH:  Path to file for logging of intermediate result (encrypted questionnaire response objects)
+* RESULT_PATH:      Path to file for logging of final result (decrypted questionnaire response objects)
+* PRIV_KEY:         Path  to private key file
+* PUB_KEY_SENDER:   Path  to public key file
+* CERT:             Path  to certificate file
+
+IMPORTANT: Remember to adapt the Docker run command when you change the log output to a different directory!
+
+=== Usage
+
+==== Preferred - Docker
+
+Build the Docker container with: 
+
+[source,shell]
+----
+$ make docker-build
+----
+
+This can take a couple of minutes. Use the following command to run the script after the build has finished.
+Make sure to set the LOG_DIR variable in the Makefile to the absulute path of the directory where you wish to store the script output.
+
+[source,shell]
+----
+$ make docker-run
+----
+
+Adapte the variables in the Makefile to change the image name. The `-v` paramter that is defined for the docker-run command in the Makefile is used to redirect the result to your local host machine, such that the decryption results are not lost.  
+
+IMPORTANT: Remember to adapt the conatiner path of the volume parameter if you configured a different directory for the log output!
+
+==== Alternative
+
+Python 3.6 is required for executing the script.
+You also need to install the required dependencies. This can be done by running the following command in the project root: 
+[source,shell]
+----
+$ pip install -r requirements.txt
+----
+
+If you encounter issues with the  installation of https://m2crypto.readthedocs.io/en/latest/index.html[M2Cryptio] refer to <<Error with M2Crypto Installation>>.
+
+You can run the downloader script with the following command in the project root:
+[source,shell]
+----
+$ python downloader.py
+----
+
+The script output will be written to the /logs directory.
+
+==== Error with M2Crypto Installation
+The installation of the M2Crypto package might cause installation problems. Refer to the pages below for help:
+
+* Windows: https://github.com/iOSForensics/pymobiledevice/issues/25
+* macOS:https://stackoverflow.com/questions/33005354/trouble-installing-m2crypto-with-pip-on-os-x-macos

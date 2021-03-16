@@ -1,0 +1,10 @@
+= COMPASS Questionnaire Response Downloader
+
+https://github.com/NUMde/compass-numapp[Main Repository]
+
+These docs will provide you with detailed information on the downloader script.
+
+The following documentation topics ar available (as of now):
+
+* link:./setup_and_usage[Setup & Usage]
+* link:./postman[Using Postman to access download API]

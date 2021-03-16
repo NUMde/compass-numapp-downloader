@@ -1,0 +1,6 @@
+
+*.pem
+logs/*
+config.py
+__pycache__/config.cpython-37.pyc
+.DS_Store
