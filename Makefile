@@ -21,7 +21,7 @@ endif
 	docker rm $(CONTAINER_NAME)
 
 clean-docker: ## remove Docker image and container
-	clean-container clean-image 
+	make clean-container clean-image
 
 clean-container: ## remove Docker container
 	docker rm $(CONTAINER_NAME)
