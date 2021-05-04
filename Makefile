@@ -1,9 +1,9 @@
 .PHONY: run docker-build docker-run clean-docker clean-container clean-image get-token
 .DEFAULT_GOAL := run
 
-export CONTAINER_NAME = compass-downloader
+export CONTAINER_NAME = compass-numapp-downloader
 export IMAGE_NAME = compass-numapp-downloader
-export LOG_DIR = /Users/alenaschmickl/bin/COMPASS/compass-numapp-downloader/logs
+export LOG_DIR = /your/path/to/compass-numapp-downloader/logs
 
 
 run: ## execute downloader script
