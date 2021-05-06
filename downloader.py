@@ -381,7 +381,7 @@ def write_df_to_file(path: str, mode: str, df: pd.DataFrame) -> bool:
         filename, file_extension = os.path.splitext(path)
         if file_extension == '':
             file_extension = '.txt'
-        time = str(datetime.datetime.now(pytz.timezone('Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M"))
+        time = str(datetime.datetime.now(pytz.timezone('Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M_%S"))
         file_out = open(filename + time + file_extension, mode)
         file_out.write(df.to_csv(index=False))
     except:
