@@ -136,7 +136,7 @@ def pkcs7_decrypt(data: bytes) -> str:
     Returns
     -------
     plain_text : str
-        Decrypted text. None if decryptioon was not successful.
+        Decrypted text. None if decryption was not successful.
 
     """
 
@@ -248,7 +248,7 @@ def get_page(headers: str, page: int) -> dict:
         Request headers including authentication token.
 
     page : int
-        Page for which data should be retreived.
+        Page for which data should be retrieved.
 
     Note
     ----
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         )
 
     print(
-        "\n########## (4/5) Writing dencrypted response objects to: %s "
+        "\n########## (4/5) Writing decrypted response objects to: %s "
         % (CONFIG.RESULT_PATH)
     )
     write_df_to_file(
