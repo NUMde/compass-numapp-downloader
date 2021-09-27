@@ -230,7 +230,6 @@ def get_authentication_token() -> str:
             "encrypted_key": rsa_encrypted_aes_key,
             "iv": iv,
         }
-        print(BASE_URL)
         response = requests.post(
             url=BASE_URL + "/" + CONFIG.AUTH_ROUTE, data=auth_body)
         token = json.loads(response.text)["access_token"]
