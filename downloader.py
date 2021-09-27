@@ -179,7 +179,8 @@ def verify_signature(jws_token: bytes) -> str:
     """
 
     try:
-        payload = jws.verify(jws_token, SIG_VERIFICATION_KEY, algorithms="RS256")
+        payload = jws.verify(
+            jws_token, SIG_VERIFICATION_KEY, algorithms="RS256")
         return payload.decode()
     except Exception as err:
         return None
@@ -211,7 +212,8 @@ def get_authentication_token() -> str:
 
     """
 
-    current_date_time = datetime.datetime.now(pytz.timezone('Europe/Berlin')).strftime("%m/%d/%Y %H:%M:%S")
+    current_date_time = datetime.datetime.now(
+        pytz.timezone('Europe/Berlin')).strftime("%m/%d/%Y %H:%M:%S")
     auth_creds = {
         "ApiID": CONFIG.API_ID,
         "ApiKey": CONFIG.API_KEY,
@@ -228,7 +230,9 @@ def get_authentication_token() -> str:
             "encrypted_key": rsa_encrypted_aes_key,
             "iv": iv,
         }
-        response = requests.post(url=BASE_URL + "/" + CONFIG.AUTH_ROUTE, data=auth_body)
+        print(BASE_URL)
+        response = requests.post(
+            url=BASE_URL + "/" + CONFIG.AUTH_ROUTE, data=auth_body)
         token = json.loads(response.text)["access_token"]
         response.raise_for_status()
     except Exception as err:
@@ -306,7 +310,8 @@ def get_qr_list_from_queue(headers: str) -> pd.DataFrame:
     # get all remaining pages
     for page in range(2, total_pages + 1):
         response_msg = get_page(headers, page)
-        df_to_add = verify_and_parse_result(response_msg_initial["cTransferList"])
+        df_to_add = verify_and_parse_result(
+            response_msg_initial["cTransferList"])
         qr_list_df = qr_list_df.append(df_to_add, sort=False)
 
     write_df_to_file(
@@ -318,15 +323,15 @@ def get_qr_list_from_queue(headers: str) -> pd.DataFrame:
     return qr_list_df
 
 
-def delete_entries(headers: str, uuids: List[str]) -> dict:
-    """Delete all questionnaire response objects that were downloaded from queue.
+def update_entries(headers: str, uuids: List[str]) -> dict:
+    """Update all questionnaire response objects that were downloaded from queue.
 
     Parameters
     ----------
     headers : str
         Request headers including authentication token.
     uuids : List[str]
-        List of IDs that identify database entries that should be deleted.
+        List of IDs that identify database entries that should be marked as downloaded.
 
     Note
     ----
@@ -337,14 +342,14 @@ def delete_entries(headers: str, uuids: List[str]) -> dict:
     Returns
     -------
     result : dict
-        Response dictionary containing info on deleted entries.
+        Response dictionary containing info on updated entries.
 
     """
 
     qr_route = BASE_URL + "/" + CONFIG.DL_ROUTE
 
     try:
-        response = requests.delete(url=qr_route, headers=headers, json=uuids)
+        response = requests.put(url=qr_route, headers=headers, json=uuids)
         result = json.loads(response.text)
         response.raise_for_status()
     except Exception as err:
@@ -381,7 +386,8 @@ def write_df_to_file(path: str, mode: str, df: pd.DataFrame) -> bool:
         filename, file_extension = os.path.splitext(path)
         if file_extension == '':
             file_extension = '.txt'
-        time = str(datetime.datetime.now(pytz.timezone('Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M_%S"))
+        time = str(datetime.datetime.now(pytz.timezone(
+            'Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M_%S"))
         file_out = open(filename + time + file_extension, mode)
         file_out.write(df.to_csv(index=False))
     except:
@@ -426,11 +432,13 @@ if __name__ == "__main__":
     print("\n########## (2/5) Getting pages from queue")
     result_df = get_qr_list_from_queue(headers)
     if result_df.empty:
-        sys.exit('No questionnaire responses were submitted till the last retrieval. Finishing script.')
+        sys.exit(
+            'No questionnaire responses were submitted since the last retrieval. Finishing script.')
 
     print("\n########## (3/5) Decrypting verified questionnaire response objects")
     result_df["JSON"] = result_df["JSON"].map(pkcs7_decrypt)
-    not_decryptable_objects = result_df[result_df["JSON"].isna()]["UUID"].tolist()
+    not_decryptable_objects = result_df[result_df["JSON"].isna(
+    )]["UUID"].tolist()
     if len(not_decryptable_objects) > 0:
         print(
             "Response objects with following UUID values could not be decrypted: \n%s "
@@ -450,11 +458,11 @@ if __name__ == "__main__":
         ],
     )
 
-    print("\n########## (5/5) Deleting all decrypted questionnaire response objects")
-    result = delete_entries(
+    print("\n########## (5/5) Updating all decrypted questionnaire response objects")
+    result = update_entries(
         headers, result_df[result_df["JSON"].notna()]["UUID"].tolist()
     )
-    if result["deletedRowCount"]:
-        print("Deleted %s objects" % (result["deletedRowCount"]))
+    if result["updatedRowCount"]:
+        print("Updated %s objects" % (result["updatedRowCount"]))
     else:
-        print("Nothing to delete")
+        print("Nothing to update")
