@@ -426,7 +426,8 @@ if __name__ == "__main__":
     print("\n########## (2/5) Getting pages from queue")
     result_df = get_qr_list_from_queue(headers)
     if result_df.empty:
-        sys.exit('No questionnaire responses were submitted till the last retrieval. Finishing script.')
+        print('No questionnaire responses were submitted till the last retrieval. Finishing script.')
+        sys.exit(0)
 
     print("\n########## (3/5) Decrypting verified questionnaire response objects")
     result_df["JSON"] = result_df["JSON"].map(pkcs7_decrypt)
@@ -446,7 +447,7 @@ if __name__ == "__main__":
         "w+",
         result_df.loc[
             result_df["JSON"].notna(),
-            ["UUID", "AppId", "JSON", "AbsendeDatum", "ErhaltenDatum"],
+            ["UUID", "SubjectId", "JSON", "AbsendeDatum", "ErhaltenDatum"],
         ],
     )
 
