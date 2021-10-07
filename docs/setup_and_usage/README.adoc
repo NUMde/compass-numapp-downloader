@@ -24,8 +24,8 @@ These are the configuration parameters which you must adapt:
 
 * BASE_URL_DEV:     Api route for your development instance of the mobile backend
 * BASE_URL:         Api route for your production instance of the mobile backend
-* CLIENT_ID:        Identification of client for retrieval of authentication token
-* CLIENT_SECRET:    Secret of client for retrieval of authentication token
+* API_ID:           Identification of client for retrieval of authentication token
+* API_KEY:          Secret of client for retrieval of authentication token
 
 Change the following parameters if you modified the backend routes or wish to define custom file paths:
 
