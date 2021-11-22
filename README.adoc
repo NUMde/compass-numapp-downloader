@@ -24,3 +24,7 @@ The questionnaire responses which were validated in the previous step are decryp
 All elements that have been decrypted in step 3 are deleted via the mobile backend based on their UUID identifiers.
 
 image:images/scriptPreview.gif[Script Preview]
+
+== Pitfalls
+
+* Make sure that the downloader script is using the same timezone as the the backend because link:https://github.com/NUMde/compass-numapp-backend/blob/3b812686bd1427bc536ed440b53fe349031a1c05/src/controllers/AuthorizationController.ts#L124[by default the signed credentials are only valid for a short time time] so the validation and therefore the whole downloading and decryption process fails, if they don't match.
