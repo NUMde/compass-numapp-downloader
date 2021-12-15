@@ -388,10 +388,10 @@ def write_df_to_file(path: str, mode: str, df: pd.DataFrame) -> bool:
         time = str(datetime.datetime.now(pytz.timezone(
             'Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M_%S"))
         file_out = open(filename + time + file_extension, mode)
-        file_out.write(df.to_csv(index=False))
+        file_out.write(df.to_csv(index=False, sep=";"))
     except:
         print("Dataframe could not be written to file. Printing here instead:\n")
-        print(df.to_csv(index=False))
+        print(df.to_csv(index=False, sep=";"))
         return False
     return True
 
