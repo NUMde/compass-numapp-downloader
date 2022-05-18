@@ -232,8 +232,8 @@ def get_authentication_token() -> str:
         }
         response = requests.post(
             url=BASE_URL + "/" + CONFIG.AUTH_ROUTE, data=auth_body)
-        token = json.loads(response.text)["access_token"]
         response.raise_for_status()
+        token = json.loads(response.text)["access_token"]
     except Exception as err:
         if response and response.status_code != 200:
             sys.exit(str(response.status_code) + " - " + str(response.reason))
@@ -349,8 +349,8 @@ def update_entries(headers: str, uuids: List[str]) -> dict:
 
     try:
         response = requests.put(url=qr_route, headers=headers, json=uuids)
-        result = json.loads(response.text)
         response.raise_for_status()
+        result = json.loads(response.text)
     except Exception as err:
         if response.status_code != 200:
             sys.exit(str(response.status_code) + " - " + str(response.reason))
