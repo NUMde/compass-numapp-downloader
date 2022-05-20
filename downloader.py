@@ -310,7 +310,7 @@ def get_qr_list_from_queue(headers: str) -> pd.DataFrame:
     for page in range(2, total_pages + 1):
         response_msg = get_page(headers, page)
         df_to_add = verify_and_parse_result(
-            response_msg_initial["cTransferList"])
+            response_msg["cTransferList"])
         qr_list_df = qr_list_df.append(df_to_add, sort=False)
 
     write_df_to_file(
