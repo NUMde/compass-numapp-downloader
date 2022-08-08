@@ -453,7 +453,7 @@ if __name__ == "__main__":
         "w+",
         result_df.loc[
             result_df["JSON"].notna(),
-            ["UUID", "SubjectId", "JSON", "AbsendeDatum", "ErhaltenDatum"],
+            ["UUID", "SubjectId", "QuestionnaireId", "Version", "JSON", "AbsendeDatum", "ErhaltenDatum"],
         ],
     )
 
