@@ -1,3 +1,4 @@
+import csv
 import config as CONFIG  # configuration file
 
 import base64
@@ -280,6 +281,35 @@ def get_page(headers: str, page: int) -> dict:
 
     return result
 
+def get_questionnaireByUrlAndVersion(headers: str, url: str, version: str)-> dict:
+    
+    """Parameters
+    ----------
+    headers : str
+        Request headers including authentication token.
+    
+    url : contains the Url of the requested questionnaire
+
+    version: contains the version of the requested questionniare
+
+    Returns
+    -------
+    result : dict
+        Response dictionary containing data for requested questionniare.
+    """
+    q_route = BASE_URL + "/" + CONFIG.Q_ROUTE
+    params = {"url": url, "version": version}
+    try:
+        response = requests.get(url=q_route, headers=headers, params=params)
+        response.raise_for_status()
+    except Exception as err:
+        if response.status_code != 200:
+            sys.exit(str(response.status_code) + " - " + str(response.reason))
+        else:
+            sys.exit(err)
+    result = json.loads(response.text)
+    return result
+
 
 def get_qr_list_from_queue(headers: str) -> pd.DataFrame:
     """Get all questionnaire response objects currently available in database queue.
@@ -388,7 +418,7 @@ def write_df_to_file(path: str, mode: str, df: pd.DataFrame) -> bool:
         time = str(datetime.datetime.now(pytz.timezone(
             'Europe/Berlin')).strftime("_%d_%m_%Y_%H_%M_%S"))
         file_out = open(filename + time + file_extension, mode)
-        file_out.write(df.to_csv(index=False, sep=";"))
+        file_out.write(df.to_csv(index=False, sep=";", quoting=csv.QUOTE_NONE))
     except:
         print("Dataframe could not be written to file. Printing here instead:\n")
         print(df.to_csv(index=False, sep=";"))
@@ -420,21 +450,65 @@ def verify_and_parse_result(jws_token: bytes) -> pd.DataFrame:
     return payload_df
 
 
+def extractAnswers(root):
+    """This method extract all the answers from questionniare response and
+       add them to a dictionary as a pair of {linkId:answer}
+    """
+    result = {}
+    for node in root:
+        if "item" in node:
+            result.update(extractAnswers(node["item"]))
+        else:
+            if "answer" in node:  result[node["linkId"]] = node["answer"] 
+            else:  result[node["linkId"]] = ''
+           
+    return result
+
+
+def createResponse(root, answerList):
+   
+    """This method get the questionnaire and the list of linkId and answer pairs from questionnaire response
+    and remove the additional information from questionnaire and add to every question the answer from the list. 
+    In case no answer is available to a question, an empty answer will be added to the question."""
+    
+    result = {}
+    for node in root:
+        removeExtras(node)
+        if "item" in node:
+            result.update(createResponse(node["item"],answerList))
+        else:
+            if node["linkId"] in answerList:
+                node["answer"] = answerList[node["linkId"]]
+            else:
+                node["answer"] = ''
+    return result
+
+def removeExtras(node):
+    """Is used in method createReponse"""
+    removeList = []
+    for item in node:
+        if(item != "linkId" and item != "text" and item != "definition" and item != "answer" and item != "item" and item != "extension"):
+            removeList.append(item)
+           
+    
+    for item in removeList:
+        node.pop(item)
+
 if __name__ == "__main__":
     SMIME_OBJ = initialize_decryption_key_object()
     SIG_VERIFICATION_KEY = initialize_sig_verification_key()
 
-    print("\n########## (1/5) Getting authentication token")
+    print("\n########## (1/7) Getting authentication token")
     token = get_authentication_token()
     headers = {"Authorization": CONFIG.AUTH_TYPE + " " + token}
 
-    print("\n########## (2/5) Getting pages from queue")
+    print("\n########## (2/7) Getting pages from queue")
     result_df = get_qr_list_from_queue(headers)
     if result_df.empty:
         print('No questionnaire responses were submitted till the last retrieval. Finishing script.')
         sys.exit(0)
 
-    print("\n########## (3/5) Decrypting verified questionnaire response objects")
+    print("\n########## (3/7) Decrypting verified questionnaire response objects")
     result_df["JSON"] = result_df["JSON"].map(pkcs7_decrypt)
     not_decryptable_objects = result_df[result_df["JSON"].isna(
     )]["UUID"].tolist()
@@ -444,20 +518,124 @@ if __name__ == "__main__":
             % (not_decryptable_objects)
         )
 
+    print("\n########## (4/7) Getting corresponding questionnaires and writing them to %s"   % (CONFIG.RESULT_PATH))
+    # Get the list of JSON responses
+    json_list = result_df[result_df["JSON"].notna()]["JSON"].tolist()
+    
+    #make a dictionary with the structure ur:version
+    i= 0
+    questionnaireDict = {}
+    for i in range(len(json_list)):
+        current_item = json_list[i]
+        current_json_response = json.loads(current_item)
+        
+        body =current_json_response["data"]["body"]
+        """  if "item" in body.keys():
+            # create a linkId:answer dictionary
+            answerList = extractAnswers(current_json_response["data"]["body"]["item"])
+        """
+        if 'questionnaire' in body.keys(): 
+            urlVersion= body['questionnaire'] 
+        else: urlVersion = ''
+        if urlVersion == '': continue
+        else:
+            if "|" not in urlVersion:
+                url = urlVersion
+                version = "0.1"
+            else:
+                index = urlVersion.index("|")
+                url = urlVersion[:index]
+                version = urlVersion[index+1:]
+                questionnaireDict[url] = version
+
+    # Get the corresponding questionnaires to the responses from backend and save them in files
+    count_questionnaire = 0
+    list_questionnaire = {}
+    
+    for key, value in questionnaireDict.items():
+        
+        #key=url|version
+        #Get the questionnaire from backend
+        if key not in list_questionnaire:
+           
+            questionnaire = get_questionnaireByUrlAndVersion(headers, key, value)  
+         
+            new_key = key+ "|"+ value
+            list_questionnaire[new_key] = questionnaire
+            
+            current_date_time = datetime.datetime.now(pytz.timezone('Europe/Berlin')).strftime("%d_%m_%Y_%H_%M_%S")
+            with open(CONFIG.LOG_PATH+ "/" + 
+                    questionnaire['name'] + '_' + 
+                    current_date_time +
+                    ".json", "w") as file_questionnaire:
+                json.dump(questionnaire, file_questionnaire)
+            count_questionnaire += 1
+    print("%s questionnaires saved to the directory." % (count_questionnaire))
+   
+
+    #Go through the json list and extend the questionnaire responses
+    print("\n########## (5/7) Extending questionnaire responses with additional questions from their corresponding questionnaires")
+
+    i = 0
+    df_json = pd.DataFrame()
+    for i in range(len(json_list)):
+        current_item = json_list[i]
+        current_json_response = json.loads(current_item)
+        
+        body =current_json_response["data"]["body"]
+        version = '0.1' #fallback
+        if "item" in body.keys():
+            # create a linkId:answer dictionary
+            answerList = extractAnswers(current_json_response["data"]["body"]["item"])
+            
+            if 'questionnaire' in body.keys(): 
+                urlVersion= body['questionnaire'] 
+            else: urlVersion = ''
+            if urlVersion == '': continue
+            else:
+                if "|" not in urlVersion:
+                    url = urlVersion
+                    version = "0.1"
+                else:
+                    index = urlVersion.index("|")
+                    url = urlVersion[:index]
+                    version = urlVersion[index+1:]
+            new_key = url + "|" + version
+            current_questionnaire = list_questionnaire[new_key]
+            if current_questionnaire:
+
+                
+                createResponse(current_questionnaire["body"]["item"], answerList)
+                current_json_response["data"]["body"]["item"] = current_questionnaire["body"]["item"]
+        df_current = pd.DataFrame({'Version':[version],'JSON': [json.dumps(current_json_response)]}) 
+        df_json = pd.concat([df_json, df_current], ignore_index=True, sort=False)
+
+           
+    
     print(
-        "\n########## (4/5) Writing decrypted response objects to: %s "
+        "\n########## (6/7) Writing decrypted response objects to: %s "
         % (CONFIG.RESULT_PATH)
     )
+    result_part1 = result_df.loc[
+            result_df["JSON"].notna(),
+            ["UUID", "SubjectId","QuestionnaireId"],
+        ]
+    result_part2 = result_df.loc[
+            result_df["JSON"].notna(),
+            ["AbsendeDatum", "ErhaltenDatum"],
+        ]
+    
+    result_df_edited =[result_part1, df_json, result_part2]
+   
+    df_res = pd.concat(result_df_edited, axis=1)
     write_df_to_file(
         CONFIG.RESULT_PATH,
         "w+",
-        result_df.loc[
-            result_df["JSON"].notna(),
-            ["UUID", "SubjectId", "QuestionnaireId", "Version", "JSON", "AbsendeDatum", "ErhaltenDatum"],
-        ],
+        df_res.loc[df_res["UUID"].notna(),['UUID', 'SubjectId', 'QuestionnaireId', 'Version', 'JSON', 'AbsendeDatum', 'ErhaltenDatum']]
+        ,
     )
 
-    print("\n########## (5/5) Updating all decrypted questionnaire response objects")
+    print("\n########## (7/7) Updating all decrypted questionnaire response objects")
     result = update_entries(
         headers, result_df[result_df["JSON"].notna()]["UUID"].tolist()
     )
