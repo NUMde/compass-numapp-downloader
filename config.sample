@@ -1,12 +1,15 @@
 AUTH_TYPE       = "Bearer"
 BASE_URL_DEV    = "https://mobile-dev-backend-domain/api"
 BASE_URL        = "https://mobile-prod-backend-domain/api"
-API_ID          = 
+API_ID          =
 API_KEY         =
 DL_ROUTE        = "download"
+Q_ROUTE         = "questionnaire"
 AUTH_ROUTE      = "auth"
+LOG_PATH        = "/logs"
 INT_RESULT_PATH = "logs/encrypted_questionnaire_responses.txt" # Remember to adapt Docker run command when changing to different directory
 RESULT_PATH     = "logs/decrypted_questionnaire_responses.txt" # Remember to adapt Docker run command when changing to different directory
 PRIV_KEY        = "keys/private.pem"
 PUB_KEY_SENDER  = "keys/public_sender.pem"
 CERT            = "keys/cert.pem"
+QUESTIONNAIRE_PREFIX =

@@ -18,7 +18,7 @@ $(error Please specify path to logs directory by adapting value of variable 'LOG
 endif
 	echo 'Logging to directory $(LOG_DIR)'
 	docker run -v $(LOG_DIR):/logs --name $(CONTAINER_NAME) $(IMAGE_NAME)
-	docker rm $(CONTAINER_NAME)
+docker rm $(CONTAINER_NAME)
 
 clean-docker: ## remove Docker image and container
 	make clean-container clean-image

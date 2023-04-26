@@ -8,4 +8,4 @@ RUN apt-get update && apt-get install -y \
     swig \
     && pip install -r requirements.txt
 
-CMD [ "python", "./downloader.py" ]
+ENTRYPOINT [ "python", "./downloader.py" ]
