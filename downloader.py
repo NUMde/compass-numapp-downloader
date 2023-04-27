@@ -148,7 +148,8 @@ def pkcs7_decrypt(data: bytes) -> str:
 
         out = SMIME_OBJ.decrypt(smime_object)
         plain_text = out.decode()
-    except:
+    except Exception as err:
+        print(err)
         plain_text = None
 
     return plain_text
@@ -518,7 +519,9 @@ if __name__ == "__main__":
             "Response objects with following UUID values could not be decrypted: \n%s "
             % (not_decryptable_objects)
         )
-
+    if(len(result_df) == len(not_decryptable_objects)):
+        print("ERR: no data could be decrypted")
+        sys.exit(0)
     print("\n########## (4/7) Getting corresponding questionnaires and writing them to %s" %
           (CONFIG.RESULT_PATH))
     # Get the list of JSON responses
@@ -576,7 +579,7 @@ if __name__ == "__main__":
         body = json.loads(current_json_response["data"]["body"]["body"])
         if "item" in body.keys():
             # create a linkId:answer dictionary
-            answerList = extractAnswers(current_json_response["data"]["body"]["item"])
+            answerList = extractAnswers(body["item"])
 
             current_questionnaire = list_questionnaire[body["questionnaire"]]
             if current_questionnaire:
@@ -602,13 +605,21 @@ if __name__ == "__main__":
         ["AbsendeDatum", "ErhaltenDatum"],
     ]
 
-    result_df_edited =[result_part1, df_json, result_part2]
+    result_df_edited = [result_part1.reset_index(drop=True), df_json.reset_index(
+        drop=True), result_part2.reset_index(drop=True)]
    
     df_res = pd.concat(result_df_edited, axis=1)
     write_df_to_file(
         CONFIG.RESULT_PATH,
         "w+",
-        df_res.loc[df_res["UUID"].notna(), ['UUID', 'SubjectId', 'QuestionnaireId',
-                                            'Version', 'JSON', 'AbsendeDatum', 'ErhaltenDatum']],
+        df_res.dropna(subset=['UUID']),
     )
 
+    print("\n########## (7/7) Updating all decrypted questionnaire response objects")
+    result = update_entries(
+        headers, result_df[result_df["JSON"].notna()]["UUID"].tolist()
+    )
+    if result["updatedRowCount"]:
+        print("Updated %s objects" % (result["updatedRowCount"]))
+    else:
+        print("Nothing to update")
