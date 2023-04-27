@@ -148,7 +148,8 @@ def pkcs7_decrypt(data: bytes) -> str:
 
         out = SMIME_OBJ.decrypt(smime_object)
         plain_text = out.decode()
-    except:
+    except Exception as err:
+        print(err)
         plain_text = None
 
     return plain_text
@@ -470,7 +471,6 @@ def createResponse(root, answerList):
     """This method get the questionnaire and the list of linkId and answer pairs from questionnaire response
     and remove the additional information from questionnaire and add to every question the answer from the list. 
     In case no answer is available to a question, an empty answer will be added to the question."""
-
     result = {}
     for node in root:
         removeExtras(node)
@@ -519,7 +519,9 @@ if __name__ == "__main__":
             "Response objects with following UUID values could not be decrypted: \n%s "
             % (not_decryptable_objects)
         )
-
+    if(len(result_df) == len(not_decryptable_objects)):
+        print("ERR: no data could be decrypted")
+        sys.exit(0)
     print("\n########## (4/7) Getting corresponding questionnaires and writing them to %s" %
           (CONFIG.RESULT_PATH))
     # Get the list of JSON responses
@@ -537,8 +539,7 @@ if __name__ == "__main__":
             # create a linkId:answer dictionary
             answerList = extractAnswers(current_json_response["data"]["body"]["item"])
         """
-        url = body['questionnaire']
-        version = body['version']
+        [url, version] = body['questionnaire'].split('|')
         questionnaireDict[url] = version
 
     # Get the corresponding questionnaires to the responses from backend and save them in files
@@ -560,7 +561,7 @@ if __name__ == "__main__":
             current_date_time = datetime.now(
                 pytz.timezone('Europe/Berlin')).strftime("%d_%m_%Y_%H_%M_%S")
             with open("logs/" +
-                      questionnaire['name'].replace(CONFIG.QUESTIONNAIRE_PREFIX, '') + '_' +
+                      questionnaire['url'].replace(CONFIG.QUESTIONNAIRE_PREFIX, '') + '_' +
                       current_date_time +
                       ".json", "w") as file_questionnaire:
                 json.dump(questionnaire, file_questionnaire)
@@ -575,18 +576,17 @@ if __name__ == "__main__":
     for i in range(len(json_list)):
         current_item = json_list[i]
         current_json_response = json.loads(current_item)
-
         body = json.loads(current_json_response["data"]["body"]["body"])
         if "item" in body.keys():
             # create a linkId:answer dictionary
             answerList = extractAnswers(body["item"])
 
-            url = body["questionnaire"]
-            version = body["version"]
-            current_questionnaire = list_questionnaire[url + "|" + version]
+            current_questionnaire = list_questionnaire[body["questionnaire"]]
             if current_questionnaire:
-                createResponse(current_questionnaire["body"]["item"], answerList)
-                current_json_response["data"]["body"]["item"] = current_questionnaire["body"]["item"]
+                createResponse(current_questionnaire["item"], answerList)
+
+                body["item"] = current_questionnaire["item"]
+                current_json_response["data"]["body"] = body
         df_current = pd.DataFrame({'Version': [version], 'JSON': [
                                   json.dumps(current_json_response)]})
         df_json = pd.concat([df_json, df_current],
@@ -605,14 +605,14 @@ if __name__ == "__main__":
         ["AbsendeDatum", "ErhaltenDatum"],
     ]
 
-    result_df_edited =[result_part1, df_json, result_part2]
+    result_df_edited = [result_part1.reset_index(drop=True), df_json.reset_index(
+        drop=True), result_part2.reset_index(drop=True)]
    
     df_res = pd.concat(result_df_edited, axis=1)
     write_df_to_file(
         CONFIG.RESULT_PATH,
         "w+",
-        df_res.loc[df_res["UUID"].notna(), ['UUID', 'SubjectId', 'QuestionnaireId',
-                                            'Version', 'JSON', 'AbsendeDatum', 'ErhaltenDatum']],
+        df_res.dropna(subset=['UUID']),
     )
 
     print("\n########## (7/7) Updating all decrypted questionnaire response objects")
