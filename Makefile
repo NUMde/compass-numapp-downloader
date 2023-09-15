@@ -1,9 +1,8 @@
+include .env
+export $(shell sed 's/=.*//' .env)
+
 .PHONY: run docker-build docker-run clean-docker clean-container clean-image get-token
 .DEFAULT_GOAL := run
-
-export CONTAINER_NAME = compass-numapp-downloader
-export IMAGE_NAME = compass-numapp-downloader
-export LOG_DIR = /your/path/to/compass-numapp-downloader/logs
 
 
 run: ## execute downloader script
@@ -18,7 +17,7 @@ $(error Please specify path to logs directory by adapting value of variable 'LOG
 endif
 	echo 'Logging to directory $(LOG_DIR)'
 	docker run -v $(LOG_DIR):/logs --name $(CONTAINER_NAME) $(IMAGE_NAME)
-docker rm $(CONTAINER_NAME)
+	docker rm $(CONTAINER_NAME)
 
 clean-docker: ## remove Docker image and container
 	make clean-container clean-image
