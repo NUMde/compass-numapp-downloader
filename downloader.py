@@ -564,7 +564,7 @@ if __name__ == "__main__":
                       questionnaire['url'].replace(CONFIG.QUESTIONNAIRE_PREFIX, '') + '_' +
                       current_date_time +
                       ".json", "w") as file_questionnaire:
-                json.dump(questionnaire, file_questionnaire)
+                json.dump(questionnaire, file_questionnaire, ensure_ascii=False)
             count_questionnaire += 1
     print("%s questionnaires saved to the directory." % (count_questionnaire))
 
@@ -576,7 +576,7 @@ if __name__ == "__main__":
     for i in range(len(json_list)):
         current_item = json_list[i]
         current_json_response = json.loads(current_item)
-        body = json.loads(current_json_response["data"]["body"]["body"])
+        body = current_json_response["data"]["body"]
         if "item" in body.keys():
             # create a linkId:answer dictionary
             answerList = extractAnswers(body["item"])
@@ -588,7 +588,7 @@ if __name__ == "__main__":
                 body["item"] = current_questionnaire["item"]
                 current_json_response["data"]["body"] = body
         df_current = pd.DataFrame({'Version': [version], 'JSON': [
-                                  json.dumps(current_json_response)]})
+                                  json.dumps(current_json_response, ensure_ascii=False)]})
         df_json = pd.concat([df_json, df_current],
                             ignore_index=True, sort=False)
 
